@@ -24,7 +24,8 @@ func (p *ProductHandler)GetProductStock(c echo.Context)error{
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": "invalid product id"})
 	}
-	stock, err := p.productService.GetProductStock(productIDInt)
+	ctx := c.Request().Context()
+	stock, err := p.productService.GetProductStock(ctx,productIDInt)
 	if err != nil {
 		return c.JSON(500, map[string]string{"error": err.Error()})
 	}
@@ -44,7 +45,8 @@ func (p *ProductHandler)ReserveProductStock(c echo.Context)error{
 			return c.JSON(400, map[string]string{"error":"Invalid request payload"})
 	}
 
-	err := p.productService.ReserveProductStock(reservation.ProductID, reservation.Quantity)
+	ctx := c.Request().Context()
+	err := p.productService.ReserveProductStock(ctx, reservation.ProductID, reservation.Quantity)
 	if err != nil {
 		return c.JSON(500, map[string]string{"error": err.Error()})
 	}
@@ -62,7 +64,8 @@ func (p *ProductHandler)ReleaseProductStock (c echo.Context)error{
 			return c.JSON(400, map[string]string{"error":"Invalid request payload"})
 	}
 
-	err := p.productService.ReleaseProductStock(release.ProductID, release.ProductID)
+	ctx := c.Request().Context()
+	err := p.productService.ReleaseProductStock(ctx, release.ProductID, release.ProductID)
 	if err != nil {
 		return c.JSON(500, map[string]string{"error": err.Error()})
 	}

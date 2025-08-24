@@ -5,6 +5,7 @@ import (
 	"product-catalog-service/internal/repository"
 	"product-catalog-service/internal/service"
 
+	"github.com/go-redis/redis/v8"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -12,9 +13,12 @@ import (
 
 func main() {
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
 	// initialize product service
 	productRepo := repository.NewProductRepository()
-	productService := service.NewProductService(*productRepo)
+	productService := service.NewProductService(*productRepo, rdb)
 	productHandler := api.NewProductHandler(*productService)
 
 	// initialize echo
