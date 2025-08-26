@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"product-catalog-service/internal/api"
+	"product-catalog-service/internal/consumer"
 	"product-catalog-service/internal/repository"
 	"product-catalog-service/internal/service"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func connectDB()(*sql.DB, error){
+func connectDB() (*sql.DB, error) {
 	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/productdb")
 	if err != nil {
 		return nil, err
@@ -35,6 +36,11 @@ func main() {
 	productService := service.NewProductService(*productRepo, rdb)
 	productHandler := api.NewProductHandler(*productService)
 
+	// consumer
+
+	consumer := consumer.NewConsumer(productService)
+	go consumer.StartKafkaConsumer()
+
 	// initialize echo
 	e := echo.New()
 
@@ -43,8 +49,8 @@ func main() {
 		Skipper: middleware.DefaultSkipper,
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(
 			middleware.RateLimiterMemoryStoreConfig{
-				Rate: rate.Limit(1),
-				Burst: 3,
+				Rate:      rate.Limit(1),
+				Burst:     3,
 				ExpiresIn: 3 * time.Minute,
 			}),
 		IdentifierExtractor: func(context echo.Context) (string, error) {
@@ -55,10 +61,10 @@ func main() {
 			//return context.RealIP(), nil
 		},
 		ErrorHandler: func(context echo.Context, err error) error {
-			return context.JSON(429, map[string]string{"error":"rate limit exceed"})
+			return context.JSON(429, map[string]string{"error": "rate limit exceed"})
 		},
 		DenyHandler: func(context echo.Context, identifier string, err error) error {
-			return context.JSON(429, map[string]string{"error":"rate limit exceed"})
+			return context.JSON(429, map[string]string{"error": "rate limit exceed"})
 		},
 	}
 
@@ -68,7 +74,6 @@ func main() {
 	e.Use(echojwt.JWT([]byte("secret")))
 	e.Use(middleware.RateLimiterWithConfig(config))
 
-
 	// routes
 	e.GET("/products/:id/stock", productHandler.GetProductStock)
 	e.GET("/products/:id/reserve", productHandler.ReserveProductStock)
@@ -76,7 +81,5 @@ func main() {
 
 	// start server
 	e.Logger.Fatal(e.Start(":8081"))
-
-	
 
 }
