@@ -70,6 +70,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
 		for _, item := range orderevent.Productrequests {
 			err := c.productSvc.ReserveProductStock(ctx, item.ProductID, item.Quantity)
 			if err != nil {
+
 				zlog.Error().Msgf("error (created) updating stock for product %d: %v", item.ProductID, err)
 			}
 		}
@@ -84,7 +85,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg kafka.Message) {
 		}
 	default:
 
-		zlog.Error().Msgf("unknown order status: %s", orderevent.Status)
+		zlog.Error().Msgf("unknown order status: %d", orderevent.Status)
 
 	}
 }
